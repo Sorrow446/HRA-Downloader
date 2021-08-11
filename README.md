@@ -32,7 +32,7 @@ Download a single album and from two text files:
 |     |    -|     |  |  |  | . | | | |   | | . | .'| . | -_|  _|
 |__|__|__|__|__|__|  |____/|___|_____|_|_|_|___|__,|___|___|_|
 
-Usage: main.exe [--outpath OUTPATH] URLS [URLS ...]
+Usage: hra_dl_x64.exe [--outpath OUTPATH] URLS [URLS ...]
 
 Positional arguments:
   URLS
