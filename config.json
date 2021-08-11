@@ -1,0 +1,10 @@
+{
+    "email": "",
+    "password": "",
+    "outPath": "HRA downloads",
+    "trackTemplate": "{{.trackPad}}. {{.title}}",
+    "downloadBooklets": true,
+    "maxCoverSize": true,
+    "keepCover": true,
+    "language": "en"
+}
