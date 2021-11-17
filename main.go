@@ -254,8 +254,11 @@ func getMeta(albumId, userData, lang string) (*AlbumMeta, error) {
 }
 
 func makeDir(path string) error {
-	err := os.MkdirAll(path, 0755)
-	return err
+	err := os.Mkdir(path, 0755)
+	if err != nil && !errors.Is(err, os.ErrExist) {
+		return err
+	}
+	return nil
 }
 
 func fileExists(path string) (bool, error) {
@@ -269,18 +272,13 @@ func fileExists(path string) (bool, error) {
 }
 
 func checkUrl(url string) bool {
-	regexes := [2]string{
-		`^https://www.highresaudio.com/(?:en|de)/album/view/[a-z\d]+/[a-z\d-]+$`,
-		`^https://stream-app.highresaudio.com/album/[a-z\d]{8}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{12}$`,
+	regexString := `^https://www.highresaudio.com/(?:en|de)/album/view/[a-z\d]+/[a-z\d-]+$`
+	regex := regexp.MustCompile(regexString)
+	match := regex.FindStringSubmatch(url)
+	if match == nil {
+		return false
 	}
-	for _, regexString := range regexes {
-		regex := regexp.MustCompile(regexString)
-		match := regex.MatchString(url)
-		if match {
-			return true
-		}
-	}
-	return false
+	return true
 }
 
 func parseAlbumMeta(meta *AlbumMeta) map[string]string {
@@ -418,7 +416,11 @@ func writeTags(trackPath, coverPath string, tags map[string]string) error {
 	return err
 }
 
-func downloadBooklet(path, url string) error {
+func downloadBooklet(path, url string, download bool) error {
+	if url == "" || !download {
+		return nil
+	}
+	fmt.Println("Downloading booklet...")
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0755)
 	if err != nil {
 		return err
@@ -437,10 +439,10 @@ func downloadBooklet(path, url string) error {
 }
 
 func checkAvail(availAt time.Time) bool {
-	return time.Now().Unix() >= availAt.Unix()
+	return time.Now().Unix() > availAt.Unix()
 }
 
-func main() {
+func init() {
 	fmt.Println(`                                                           
  _____ _____ _____    ____                _           _         
 |  |  | __  |  _  |  |    \ ___ _ _ _ ___| |___ ___ _| |___ ___ 
@@ -455,6 +457,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func main() {
 	cfg, err := parseCfg()
 	if err != nil {
 		errString := fmt.Sprintf("Failed to parse config file.\n%s", err)
@@ -514,12 +519,9 @@ func main() {
 			coverPath = ""
 		}
 		bookletPath := filepath.Join(albumPath, "booklet.pdf")
-		if meta.Data.Results.Booklet != "" && cfg.DownloadBooklets {
-			fmt.Println("Downloading booklet...")
-			err = downloadBooklet(bookletPath, meta.Data.Results.Booklet)
-			if err != nil {
-				fmt.Println("Failed to download booklet.\n", err)
-			}
+		err = downloadBooklet(bookletPath, meta.Data.Results.Booklet, cfg.DownloadBooklets)
+		if err != nil {
+			fmt.Println("Failed to download booklet.\n", err)
 		}
 		trackTotal := len(meta.Data.Results.Tracks)
 		for trackNum, track := range meta.Data.Results.Tracks {
