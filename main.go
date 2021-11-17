@@ -275,7 +275,7 @@ func checkUrl(url string) bool {
 	}
 	for _, regexString := range regexes {
 		regex := regexp.MustCompile(regexString)
-		match := regex.MatchString(regexString)
+		match := regex.MatchString(url)
 		if match {
 			return true
 		}
